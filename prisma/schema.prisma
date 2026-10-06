@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+model User {
+  id String @id @default(cuid())
+  email String @unique
+  name String
+  bio String @default("")
+  location String @default("")
+  passwordHash String
+  role String @default("MEMBER")
+  active Boolean @default(true)
+  emailVerifiedAt DateTime?
+  stripeAccountId String? @unique
+  payoutsEnabled Boolean @default(false)
+  createdAt DateTime @default(now())
+  sessions Session[]
+  tokens AuthToken[]
+  listings Listing[]
+  bookings Booking[]
+  uploads Upload[]
+  notifications Notification[]
+}
+model Session {
+  tokenHash String @id
+  userId String
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([userId])
+}
+model AuthToken {
+  tokenHash String @id
+  userId String
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  purpose String
+  expiresAt DateTime
+  @@index([userId,purpose])
+}
+model RateLimit {
+  key String @id
+  count Int @default(1)
+  expiresAt DateTime
+}
+model Listing {
+  id String @id @default(cuid())
+  ownerId String
+  owner User @relation(fields:[ownerId], references:[id])
+  title String
+  description String
+  brand String
+  category String
+  size String
+  measurements String @default("")
+  condition String
+  location String
+  dailyRate Int
+  cleaningFee Int @default(0)
+  deposit Int @default(0)
+  images String[]
+  availableFrom String
+  availableTo String
+  status String @default("PENDING")
+  moderationNote String @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bookings Booking[]
+  blocks ListingBlock[]
+  @@index([status,category])
+}
+model Booking {
+  id String @id @default(cuid())
+  listingId String
+  listing Listing @relation(fields:[listingId], references:[id])
+  renterId String
+  renter User @relation(fields:[renterId], references:[id])
+  startDate String
+  endDate String
+  days Int
+  rental Int
+  cleaningFee Int
+  serviceFee Int
+  deposit Int
+  total Int
+  ownerEarnings Int
+  currency String @default("gbp")
+  status String @default("REQUESTED")
+  expiresAt DateTime?
+  paymentStatus String @default("UNPAID")
+  stripeSessionId String? @unique
+  stripeCheckoutParams Json?
+  stripePaymentIntentId String? @unique
+  stripeTransferId String? @unique
+  stripeRefundId String?
+  refundedAmount Int @default(0)
+  payoutStatus String @default("PENDING")
+  settlementVersion Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  messages Message[]
+  evidence Evidence[]
+  claim Claim?
+  reviews Review[]
+  events BookingEvent[]
+  notifications Notification[]
+  @@index([listingId,startDate,endDate])
+  @@index([renterId])
+}
+model Message {
+  id String @id @default(cuid())
+  bookingId String
+  booking Booking @relation(fields:[bookingId], references:[id], onDelete:Cascade)
+  senderId String
+  text String
+  createdAt DateTime @default(now())
+  @@index([bookingId,createdAt])
+}
+model Evidence {
+  id String @id @default(cuid())
+  bookingId String
+  booking Booking @relation(fields:[bookingId], references:[id], onDelete:Cascade)
+  authorId String
+  phase String
+  photos String[]
+  notes String
+  createdAt DateTime @default(now())
+  @@unique([bookingId,authorId,phase])
+}
+model Claim {
+  id String @id @default(cuid())
+  kind String @default("DAMAGE")
+  bookingId String @unique
+  booking Booking @relation(fields:[bookingId], references:[id], onDelete:Cascade)
+  openedBy String
+  description String
+  requestedAmount Int
+  awardedAmount Int @default(0)
+  status String @default("OPEN")
+  resolution String @default("")
+  createdAt DateTime @default(now())
+}
+model Review {
+  id String @id @default(cuid())
+  bookingId String
+  booking Booking @relation(fields:[bookingId], references:[id], onDelete:Cascade)
+  authorId String
+  rating Int
+  comment String
+  createdAt DateTime @default(now())
+  @@unique([bookingId,authorId])
+}
+model BookingEvent {
+  id String @id @default(cuid())
+  bookingId String
+  booking Booking @relation(fields:[bookingId], references:[id], onDelete:Cascade)
+  actorId String
+  type String
+  detail String
+  createdAt DateTime @default(now())
+  @@index([bookingId,createdAt])
+}
+model Upload {
+  id String @id @default(cuid())
+  ownerId String
+  owner User @relation(fields:[ownerId], references:[id])
+  key String @unique
+  mimeType String
+  bytes Int
+  purpose String
+  bookingId String?
+  createdAt DateTime @default(now())
+}
+model WebhookEvent {
+  id String @id
+  type String
+  processedAt DateTime @default(now())
+}
+
+model ListingBlock {
+  id String @id @default(cuid())
+  listingId String
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  startDate String
+  endDate String
+  @@index([listingId, startDate, endDate])
+}
+
+model Notification {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title String
+  body String
+  bookingId String?
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId, readAt, createdAt])
+}
