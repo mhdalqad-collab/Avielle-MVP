@@ -2,19 +2,27 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Notifications } from "./notifications";
+import { useEffect, useMemo, useState } from "react";
+import { Notifications, type NotificationData } from "./notifications";
+import {
+  DashboardHero,
+  DashboardMetrics,
+  CreatorSpotlight,
+} from "./dashboard-editorial";
+import { ClosetActivity } from "./closet-activity";
+import { WardrobeRail } from "./wardrobe-rail";
+import { useSavedWardrobe } from "./saved-wardrobe";
 import {
   ArrowRight,
   ArrowUpRight,
   CheckCircle2,
-  Plus,
   RefreshCw,
   Wallet,
 } from "lucide-react";
 import {
   api,
   Booking,
+  Catalogue,
   Button,
   date,
   Empty,
@@ -52,7 +60,45 @@ function DashboardContent() {
   const auth = useAuth();
   const params = useSearchParams();
   const resource = useResource<Dashboard>("/api/dashboard");
+  const updates = useResource<NotificationData>("/api/notifications");
+  const catalogue = useResource<Catalogue>("/api/listings");
+  const member = useResource<{
+    profile: {
+      id: string;
+      name: string;
+      bio: string;
+      location: string;
+      reviews: { rating: number }[];
+    };
+  }>(auth.user ? `/api/members/${auth.user.id}` : null);
+  const saved = useSavedWardrobe();
+  const savedPool = useMemo(
+    () => [
+      ...(resource.data?.listings || []),
+      ...(catalogue.data?.listings || []),
+    ],
+    [resource.data, catalogue.data],
+  );
+  const savedPieces = useSavedPieces(
+    saved.ids,
+    savedPool,
+    catalogue.loading && !catalogue.data,
+  );
+  const featured =
+    catalogue.data?.listings.find(
+      (l) => l.ownerId !== auth.user?.id && l.images[0],
+    ) || catalogue.data?.listings.find((l) => l.images[0]);
+  const creator = useResource<{
+    profile: { id: string; name: string; bio: string; location: string };
+  }>(
+    featured && featured.ownerId !== auth.user?.id
+      ? `/api/members/${featured.ownerId}`
+      : null,
+  );
   const [tab, setTab] = useState("rentals");
+  const [perspective, setPerspective] = useState<"renting" | "lending">(
+    "renting",
+  );
   const [deleting, setDeleting] = useState("");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -60,10 +106,13 @@ function DashboardContent() {
   const [notes, setNotes] = useState<Record<string, string>>({});
   useEffect(() => {
     const timer = setInterval(() => {
-      if (document.visibilityState === "visible") void resource.refresh();
+      if (document.visibilityState === "visible") {
+        void resource.refresh();
+        void updates.refresh();
+      }
     }, 30000);
     return () => clearInterval(timer);
-  }, [resource.refresh]);
+  }, [resource.refresh, updates.refresh]);
   async function act(
     key: string,
     task: () => Promise<unknown>,
@@ -100,6 +149,18 @@ function DashboardContent() {
   const incoming = bookings.filter(
     (b) => b.listing.ownerId === user.id || b.listing.owner.id === user.id,
   );
+  const reviews = member.data?.profile.reviews || [];
+  const rating = reviews.length
+    ? {
+        value: reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length,
+        count: reviews.length,
+      }
+    : undefined;
+  const railPieces = listings.length
+    ? listings.slice(0, 12)
+    : (catalogue.data?.listings || [])
+        .filter((l) => l.ownerId !== user.id)
+        .slice(0, 12);
   const shownBookings =
     tab === "active"
       ? bookings.filter((b) =>
@@ -120,24 +181,7 @@ function DashboardContent() {
           : rentals;
   return (
     <div className="page dashboard">
-      <div className="page-heading split">
-        <div>
-          <p className="eyebrow">YOUR AVIELLE</p>
-          <h1>
-            Hello, <em>{user.name.split(" ")[0]}.</em>
-          </h1>
-          <p>Your pieces, plans and possibilities. All in one place.</p>
-        </div>
-        <div className="button-row">
-          <Link className="button outline" href="/profile">
-            My profile
-          </Link>
-          <Link className="button" href="/list">
-            <Plus size={17} />
-            List a piece
-          </Link>
-        </div>
-      </div>
+      <DashboardHero user={user} feature={listings.find((l) => l.images[0])} />
       {params.get("created") && (
         <Notice kind="success">
           Your piece has been submitted. It will appear in the shared wardrobe
@@ -171,36 +215,15 @@ function DashboardContent() {
           </Button>
         </div>
       )}
-      <div className="dashboard-stats">
-        <div>
-          <span>Your pieces</span>
-          <strong>{listings.length}</strong>
-          <small>
-            {listings.filter((l) => l.status === "ACTIVE").length} published
-          </small>
-        </div>
-        <div>
-          <span>Your rentals</span>
-          <strong>{rentals.length}</strong>
-          <small>
-            {
-              rentals.filter((b) =>
-                ["APPROVED", "CONFIRMED", "IN_USE", "RETURNED"].includes(
-                  b.status,
-                ),
-              ).length
-            }{" "}
-            awaiting your next step
-          </small>
-        </div>
-        <div>
-          <span>Lending requests</span>
-          <strong>
-            {incoming.filter((b) => b.status === "REQUESTED").length}
-          </strong>
-          <small>Waiting for a response</small>
-        </div>
-      </div>
+      <DashboardMetrics
+        user={user}
+        listings={listings}
+        bookings={bookings}
+        currency={currency}
+        mode={perspective}
+        savedCount={saved.ids.length}
+        rating={rating}
+      />
       <section className="payout-banner">
         <span className="payout-icon">
           {user.payoutsEnabled ? (
@@ -294,7 +317,37 @@ function DashboardContent() {
             id={`tab-${t.value}`}
             aria-controls="wardrobe-panel"
             aria-selected={tab === t.value}
-            onClick={() => setTab(t.value)}
+            tabIndex={tab === t.value ? 0 : -1}
+            onKeyDown={(event) => {
+              if (
+                !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)
+              )
+                return;
+              event.preventDefault();
+              const tabs = Array.from(
+                event.currentTarget.parentElement!.querySelectorAll<HTMLButtonElement>(
+                  '[role="tab"]',
+                ),
+              );
+              const index = tabs.indexOf(event.currentTarget);
+              const next =
+                event.key === "Home"
+                  ? 0
+                  : event.key === "End"
+                    ? tabs.length - 1
+                    : (index +
+                        (event.key === "ArrowRight" ? 1 : -1) +
+                        tabs.length) %
+                      tabs.length;
+              tabs[next].focus();
+              tabs[next].click();
+            }}
+            onClick={() => {
+              setTab(t.value);
+              if (t.value === "rentals") setPerspective("renting");
+              if (t.value === "incoming" || t.value === "listings")
+                setPerspective("lending");
+            }}
           >
             {t.label}
             {t.count !== undefined && <span>{t.count}</span>}
@@ -307,7 +360,7 @@ function DashboardContent() {
         aria-labelledby={`tab-${tab}`}
       >
         {tab === "updates" ? (
-          <Notifications />
+          <Notifications resource={updates} />
         ) : tab === "listings" ? (
           listings.length ? (
             <div className="own-listings">
@@ -631,8 +684,143 @@ function DashboardContent() {
           </>
         )}
       </section>
+      <div className="dashboard-journal">
+        <ClosetActivity
+          bookings={bookings}
+          notifications={updates.data?.notifications || []}
+          loading={updates.loading}
+          error={updates.error}
+        />
+        <CreatorSpotlight
+          listing={featured}
+          creator={
+            featured?.ownerId === user.id
+              ? member.data?.profile
+              : creator.data?.profile
+          }
+        />
+      </div>
+      {railPieces.length ? (
+        <WardrobeRail
+          title={
+            listings.length ? "Your digital wardrobe" : "A new wardrobe awaits"
+          }
+          eyebrow={
+            listings.length
+              ? "COLLECTED BY YOU, SHARED WITH CARE"
+              : "PIECES WITH ANOTHER CHAPTER"
+          }
+          description={
+            listings.length
+              ? "Your pieces, side by side. Manage publication and availability in My pieces above."
+              : "Discover what the community is sharing. Each piece leads to its real dates and details."
+          }
+          listings={railPieces}
+          currency={currency}
+          href={listings.length ? `/members/${user.id}` : "/explore"}
+          action={
+            listings.length ? "View public closet" : "Explore the wardrobe"
+          }
+        />
+      ) : (
+        <section className="wardrobe-rail-empty">
+          <p className="eyebrow">A LITTLE SPACE FOR POSSIBILITY</p>
+          <h2>
+            Your wardrobe starts <em>with one piece.</em>
+          </h2>
+          <p>Shared pieces will appear here when they are published.</p>
+          <Link href="/explore" className="text-link underline">
+            Explore the wardrobe <ArrowUpRight size={16} />
+          </Link>
+        </section>
+      )}
+      {saved.ids.length > 0 && (
+        <section
+          className="saved-pieces-section"
+          aria-label="Saved on this device"
+        >
+          <WardrobeRail
+            title="Saved on this device"
+            eyebrow="YOUR PERSONAL SHORTLIST"
+            description="A few pieces to return to. Saved in this browser for your account; availability comes from the live wardrobe."
+            listings={savedPieces.listings}
+            currency={currency}
+          />
+          {savedPieces.loading && (
+            <p role="status" className="muted">
+              Opening your saved pieces…
+            </p>
+          )}
+          {savedPieces.unavailable && (
+            <p className="muted">
+              Some saved pieces are unavailable. Your bookmarks stay on this
+              device.
+            </p>
+          )}
+          {saved.error && <Notice>{saved.error}</Notice>}
+          <button
+            className="text-link underline"
+            onClick={() => saved.ids.forEach((id) => saved.remove(id))}
+          >
+            Clear saved pieces
+          </button>
+        </section>
+      )}
     </div>
   );
+}
+function useSavedPieces(ids: string[], pool: Listing[], wait: boolean) {
+  const [result, setResult] = useState<{
+    listings: Listing[];
+    loading: boolean;
+    unavailable: boolean;
+  }>({ listings: [], loading: false, unavailable: false });
+  const idsKey = ids.join(",");
+  useEffect(() => {
+    const controller = new AbortController();
+    if (!ids.length) {
+      setResult({ listings: [], loading: false, unavailable: false });
+      return;
+    }
+    if (wait) return;
+    const found = new Map(pool.map((listing) => [listing.id, listing]));
+    const missing = ids.filter((id) => !found.has(id));
+    setResult({
+      listings: ids.flatMap((id) => (found.has(id) ? [found.get(id)!] : [])),
+      loading: missing.length > 0,
+      unavailable: false,
+    });
+    if (missing.length)
+      void Promise.allSettled(
+        missing.map(async (id) => {
+          const response = await fetch(`/api/listings/${id}`, {
+            credentials: "same-origin",
+            cache: "no-store",
+            signal: controller.signal,
+          });
+          if (!response.ok) throw new Error("Unavailable piece");
+          const body = await response.json();
+          if (body.listing?.id === id && body.listing.status !== "DELETED")
+            return body.listing as Listing;
+          throw new Error("Unavailable piece");
+        }),
+      ).then((results) => {
+        if (controller.signal.aborted) return;
+        results.forEach((value) => {
+          if (value.status === "fulfilled")
+            found.set(value.value.id, value.value);
+        });
+        setResult({
+          listings: ids.flatMap((id) =>
+            found.has(id) ? [found.get(id)!] : [],
+          ),
+          loading: false,
+          unavailable: results.some((value) => value.status === "rejected"),
+        });
+      });
+    return () => controller.abort();
+  }, [idsKey, pool, wait]);
+  return result;
 }
 function BookingRow({
   booking: b,

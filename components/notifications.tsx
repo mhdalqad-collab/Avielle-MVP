@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Bell, Check } from "lucide-react";
 import { api, Button, date, errorMessage, Notice, useResource } from "./shared";
 
-type Notification = {
+export type Notification = {
   id: string;
   title: string;
   body: string;
@@ -13,19 +13,32 @@ type Notification = {
   readAt: string | null;
   createdAt: string;
 };
-export function Notifications() {
-  const resource = useResource<{
-    notifications: Notification[];
-    unreadCount: number;
-  }>("/api/notifications");
+export type NotificationData = {
+  notifications: Notification[];
+  unreadCount: number;
+};
+type NotificationResource = {
+  data: NotificationData | null;
+  loading: boolean;
+  error: string;
+  refresh: () => Promise<void>;
+};
+export function Notifications({
+  resource: provided,
+}: { resource?: NotificationResource } = {}) {
+  const local = useResource<NotificationData>(
+    provided ? null : "/api/notifications",
+  );
+  const resource = provided || local;
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   useEffect(() => {
+    if (provided) return;
     const timer = setInterval(() => {
       if (document.visibilityState === "visible") void resource.refresh();
     }, 30000);
     return () => clearInterval(timer);
-  }, [resource.refresh]);
+  }, [resource.refresh, provided]);
   async function read(id?: string) {
     setBusy(id || "all");
     setError("");

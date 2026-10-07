@@ -44,6 +44,8 @@ The hook captures verification/reset mail under ignored `.local/e2e-mail`; it re
 
 Checkout and settlement first assert the real server's honest 503 when Stripe is absent. Only the separate test worker then injects the provider double to verify persistent payment/refund/transfer state and continue the browser journey. No card checkout page, real email delivery, S3 service or bank payout is certified by this test. Successful browser snapshots are written to ignored `.local/qa`; failures retain traces and screenshots in ignored `test-results`.
 
+The same browser command also runs five dashboard scenarios against genuine, isolated PostgreSQL fixture rows: lender metrics/activity/spotlight and retained management controls; renter metrics, keyboard saving, reload/cross-tab persistence and account isolation; mobile touch scrolling; denied-storage feedback; and reduced-motion behavior. Checks cover metric layout, alternate-image loading, image-motion pause/resume, keyboard tabs, desktop/tablet/mobile page overflow and browser exceptions. Saved pieces are device-local IDs; fixture account/listing data is never seeded in production. Desktop lender and mobile renter captures are saved under `.local/qa/dashboard-*.png` for visual inspection.
+
 Afterward stop this test server and discard its temporary shell environment. Normal `npm run dev` never loads the hook. Never set the test mail credentials in a deployed environment.
 
 ## Production packaging and launch checks

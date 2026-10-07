@@ -8,12 +8,14 @@ import {
   ArrowRight,
   CalendarDays,
   Check,
+  Heart,
   MapPin,
   Search,
   SlidersHorizontal,
   Star,
 } from "lucide-react";
 import { AvailabilityCalendar } from "./availability";
+import { useSavedWardrobe } from "./saved-wardrobe";
 import {
   api,
   Button,
@@ -40,31 +42,96 @@ export function ListingCard({
   listing: Listing;
   currency: string;
 }) {
+  const saved = useSavedWardrobe();
+  const [previewRequested, setPreviewRequested] = useState(false);
+  const [previewReady, setPreviewReady] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<
+    "saved" | "removed" | "error" | ""
+  >("");
+  const isSaved = saved.isSaved(listing.id);
+  const secondImage =
+    listing.images[1] !== listing.images[0] ? listing.images[1] : null;
   return (
-    <Link href={`/items/${listing.id}`} className="listing-card">
-      <div className="listing-card-image">
-        {listing.images[0] ? (
-          <img src={listing.images[0]} alt={listing.title} loading="lazy" />
-        ) : (
-          <div className="image-placeholder">Photo unavailable</div>
-        )}
-        <span className="listing-size">{listing.size}</span>
-      </div>
-      <div className="listing-card-info">
-        <p className="eyebrow">{listing.brand}</p>
-        <h3>{listing.title}</h3>
-        <p className="location">
-          <MapPin size={13} />
-          {listing.location}
-        </p>
-        <div className="listing-card-bottom">
-          <span>
-            <strong>{money(listing.dailyRate, currency)}</strong> / day
-          </span>
-          <ArrowRight size={17} />
+    <article className={`garment-card${isSaved ? " is-saved" : ""}`}>
+      <Link
+        href={`/items/${listing.id}`}
+        className={`listing-card${previewReady ? " is-preview-ready" : ""}`}
+        onMouseEnter={() => setPreviewRequested(true)}
+        onFocus={() => setPreviewRequested(true)}
+      >
+        <div className="listing-card-image">
+          {listing.images[0] ? (
+            <img
+              className="garment-image-primary"
+              src={listing.images[0]}
+              alt={listing.title}
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <div className="image-placeholder">Photo unavailable</div>
+          )}
+          {previewRequested && secondImage && (
+            <img
+              className="garment-image-secondary"
+              src={secondImage}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              decoding="async"
+              onLoad={() => setPreviewReady(true)}
+            />
+          )}
+          <span className="listing-size">{listing.size}</span>
         </div>
-      </div>
-    </Link>
+        <div className="listing-card-info">
+          <p className="eyebrow">{listing.brand}</p>
+          <h3>{listing.title}</h3>
+          <p className="location">
+            <MapPin size={13} />
+            {listing.location}
+          </p>
+          <div className="listing-card-bottom">
+            <span>
+              <strong>{money(listing.dailyRate, currency)}</strong> / day
+            </span>
+            <ArrowRight size={17} aria-hidden="true" />
+          </div>
+        </div>
+      </Link>
+      <button
+        type="button"
+        className="garment-save"
+        aria-label={`${isSaved ? "Remove" : "Save"} ${listing.title}${isSaved ? " from saved pieces" : " on this device"}`}
+        aria-pressed={isSaved}
+        disabled={!saved.ready}
+        title={isSaved ? "Saved on this device" : "Save on this device"}
+        onClick={() => {
+          const success = saved.toggle(listing.id);
+          setSaveFeedback(success ? (isSaved ? "removed" : "saved") : "error");
+        }}
+      >
+        <Heart
+          size={18}
+          strokeWidth={1.5}
+          fill={isSaved ? "currentColor" : "none"}
+          aria-hidden="true"
+        />
+      </button>
+      <p
+        className={`garment-save-note${saveFeedback === "error" ? " has-error" : ""}`}
+        role="status"
+        aria-live="polite"
+      >
+        {saveFeedback === "error"
+          ? saved.error || "This piece could not be saved. Please try again."
+          : saveFeedback === "saved" && isSaved
+            ? "Saved on this device"
+            : saveFeedback === "removed" && !isSaved
+              ? "Removed from saved pieces"
+              : ""}
+      </p>
+    </article>
   );
 }
 
