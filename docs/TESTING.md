@@ -48,10 +48,28 @@ The same browser command also runs five dashboard scenarios against genuine, iso
 
 Afterward stop this test server and discard its temporary shell environment. Normal `npm run dev` never loads the hook. Never set the test mail credentials in a deployed environment.
 
-Five additional home-page browser scenarios verify the actual WebGL canvas has rendered pixels, scroll chapters and pinning, pause/resume, a persistent accessible heading, desktop/tablet/phone/short-viewport layouts, reduced motion, an unavailable-WebGL image fallback and absence of the effect on other routes. These presentation checks create no account, booking or financial data. Screenshots are saved under ignored `.local/qa/home-animation-*.png`.
+Five additional home-page browser scenarios verify the CSS dashboard illustration: actual perspective transforms, scroll chapters and pinning, fine-pointer response, pause/resume, a persistent accessible heading, viewport containment, flat reduced motion, static server HTML with JavaScript disabled, initial CLS below 0.1, and absence of the effect on other routes. They also assert that no canvas or video is introduced. Layout checks use 1440×1000, 768×844, 390×844, 375×667, 1280×640, 320×568 and 812×375; very short viewports use ordinary page flow. These presentation checks create no account, booking or financial data. The preview is explicitly illustrative, with no fictional account metrics or availability. Screenshots are saved under ignored `.local/qa/home-animation-*.png` and `.local/qa/home-dashboard-preview-no-javascript.png`.
+
+For a focused home check against the running local server, use `npm run test:e2e -- tests/e2e/home-animation.spec.ts`. Run the same cases against the production server to verify the server-rendered fallback and packaged styles. Story geometry and chapter-control space are reserved before hydration; the JavaScript-disabled page uses a scoped `noscript` style for ordinary flow. The effect uses event-driven animation frames only while input settles; CSS panel float stops when paused, offscreen, in a hidden tab or under reduced motion. No WebGL assets, external models or animation dependency is needed.
 
 ## Production packaging and launch checks
 
 Run `npm run build`, followed by `npm start` with deployment environment values. For GoDaddy packaging, repeat in a fresh source copy with `npm ci --omit=dev`; tests and Playwright configuration are excluded from the application build's TypeScript project and checked separately by `npm run typecheck` in the full development installation.
+
+To repeat only the home presentation cases against the production build, stop the development server, then start production on the browser configuration's port 3000:
+
+```powershell
+npm run build
+$env:PORT='3000'
+npm start
+```
+
+In another terminal with the full development dependencies installed, run:
+
+```powershell
+npm run test:e2e -- tests/e2e/home-animation.spec.ts
+```
+
+This repeats the same five home cases; it adds no test accounts, bookings or financial rows. The complete local browser suite contains 11 cases, so a successful five-case production repeat does not mean there are 16 distinct scenarios. On 8 October all 50 service tests, all 11 browser cases, both TypeScript projects and the Node.js 22 production build passed; the same five home cases then passed in production. Manual coarse-pointer touch/tap and live reduced-motion changes passed, and a separate production desktop PerformanceObserver measurement observed zero layout-shift events.
 
 Run `npm run check:launch` against the intended deployment configuration. Missing hosting, production database/storage, email, Stripe, admin or business-policy settings are deployment blockers, not permission to replace those services with mocks. Then perform real Stripe test-mode checkout/refund/Connect tests, verified email delivery, private S3 access and deployed-host connectivity checks before enabling customers.

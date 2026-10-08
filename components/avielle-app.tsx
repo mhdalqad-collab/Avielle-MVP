@@ -21,7 +21,7 @@ import { DashboardPage } from "./dashboard";
 import { ListingPage } from "./listing-form";
 import { BookingPage } from "./booking";
 import { ProfilePage, MemberPage } from "./profile";
-import { HomeFashionStory } from "./home-fashion-story";
+import { HomeDashboardStory } from "./home-dashboard-story";
 
 export function AvielleApp() {
   return (
@@ -227,7 +227,7 @@ function Footer() {
 function HomePage() {
   return (
     <>
-      <HomeFashionStory />
+      <HomeDashboardStory />
       <div className="brand-values">
         <span>
           <Shirt size={18} strokeWidth={1.4} /> Pieces with another story to
