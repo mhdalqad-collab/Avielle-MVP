@@ -3558,3 +3558,348 @@ th {
     scroll-behavior: auto !important;
   }
 }
+
+/* Home-only scroll story. The WebGL garment loads after the first paint. */
+.home-fashion-story {
+  position: relative;
+  height: 240svh;
+  min-height: 1680px;
+  background: var(--paper);
+}
+.hero.home-fashion-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  min-height: 680px;
+  overflow: hidden;
+}
+.home-fashion-copy {
+  align-self: center;
+  padding-top: 45px;
+  padding-bottom: 60px;
+  min-width: 0;
+}
+.home-story-panels {
+  min-height: clamp(295px, 27vw, 410px);
+}
+.home-story-panel[hidden] {
+  display: none;
+}
+.home-story-panel:not([hidden]) {
+  animation: home-story-reveal 450ms ease-out both;
+}
+.home-story-panel h1,
+.home-story-panel h2 {
+  font-size: clamp(52px, 6vw, 88px);
+  line-height: 0.99;
+  letter-spacing: -3px;
+  margin-bottom: 28px;
+}
+.home-story-panel em {
+  color: #60705c;
+}
+.home-fashion-copy .hero-note {
+  margin-top: 30px;
+}
+.home-story-navigation {
+  display: flex;
+  gap: 22px;
+  margin-top: 30px;
+}
+.home-story-navigation button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  font-size: 10px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+}
+.home-story-navigation button span {
+  font-size: 9px;
+  opacity: 0.65;
+}
+.home-story-navigation button[aria-current="step"] {
+  color: var(--green);
+  border-color: var(--green);
+}
+.hero-image.home-fashion-visual {
+  margin: 0;
+  height: 100%;
+  min-width: 0;
+  background: #e8e7df;
+  border-left: 1px solid var(--line);
+}
+.home-fashion-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 300ms ease;
+  pointer-events: none;
+}
+.home-fashion-fallback {
+  transition: opacity 300ms ease;
+}
+[data-visual-state="ready"] .home-fashion-canvas {
+  opacity: 1;
+}
+[data-visual-state="ready"] .home-fashion-fallback {
+  opacity: 0;
+}
+.home-fashion-edition {
+  position: absolute;
+  left: 30px;
+  top: 30px;
+  font-size: 9px;
+  letter-spacing: 1.7px;
+  color: var(--green);
+  z-index: 1;
+}
+.home-fashion-pause {
+  position: absolute;
+  top: 57px;
+  left: 30px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid #bcc2b7;
+  background: var(--paper);
+  color: var(--green);
+  font-size: 10px;
+  z-index: 1;
+}
+.home-fashion-caption {
+  position: absolute;
+  bottom: 38px;
+  left: 30px;
+  right: 30px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 25px;
+  color: var(--green);
+  font-size: 10px;
+  line-height: 1.7;
+  letter-spacing: 1px;
+}
+.home-fashion-caption span:last-child {
+  max-width: 175px;
+  font-size: 9px;
+  letter-spacing: 0;
+  text-align: right;
+}
+[data-visual-state="fallback"] .home-fashion-caption,
+[data-visual-state="loading"] .home-fashion-caption {
+  color: white;
+  text-shadow: 0 1px 9px #263a30;
+}
+.home-fashion-scroll {
+  position: absolute;
+  left: 7vw;
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+}
+@keyframes home-story-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.home-fashion-story[data-paused="true"] .home-story-panel {
+  animation: none;
+}
+@media (max-width: 1000px) {
+  .home-fashion-copy {
+    padding-left: 5vw;
+    padding-right: 4vw;
+  }
+  .home-story-panel h1,
+  .home-story-panel h2 {
+    font-size: 58px;
+  }
+  .home-story-navigation {
+    gap: 17px;
+  }
+  .home-fashion-caption {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .home-fashion-caption span:last-child {
+    text-align: left;
+    max-width: none;
+  }
+}
+@media (max-width: 700px) {
+  .home-fashion-story {
+    height: 250svh;
+    min-height: 1750px;
+  }
+  .hero.home-fashion-stage {
+    min-height: 780px;
+    grid-template-rows: auto minmax(300px, 1fr);
+  }
+  .home-fashion-copy {
+    padding: 27px 25px 18px;
+  }
+  .home-fashion-copy > .eyebrow {
+    margin-bottom: 20px;
+  }
+  .home-story-panels {
+    min-height: 230px;
+  }
+  .home-story-panel h1,
+  .home-story-panel h2 {
+    font-size: clamp(42px, 11.5vw, 59px);
+    letter-spacing: -1.7px;
+    margin-bottom: 18px;
+  }
+  .home-fashion-copy .hero-description {
+    font-size: 12px;
+    line-height: 1.7;
+    margin-bottom: 18px;
+  }
+  .home-fashion-copy .hero-note {
+    margin-top: 17px;
+  }
+  .home-story-navigation {
+    margin-top: 12px;
+    gap: 23px;
+  }
+  .hero-image.home-fashion-visual {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+  .home-fashion-edition {
+    left: 20px;
+    top: 18px;
+    font-size: 8px;
+  }
+  .home-fashion-pause {
+    left: auto;
+    right: 17px;
+    top: 38px;
+    min-height: 38px;
+    padding: 0 8px;
+    font-size: 9px;
+  }
+  .home-fashion-caption {
+    left: 20px;
+    right: 20px;
+    bottom: 19px;
+    flex-direction: row;
+    align-items: flex-end;
+    font-size: 8px;
+    gap: 15px;
+  }
+  .home-fashion-caption span:last-child {
+    max-width: 145px;
+    font-size: 8px;
+    text-align: right;
+  }
+  .home-fashion-scroll {
+    display: none;
+  }
+}
+@media (max-height: 780px) {
+  .hero.home-fashion-stage {
+    min-height: 0;
+  }
+  .home-fashion-copy {
+    padding-top: 24px;
+    padding-bottom: 35px;
+  }
+  .home-story-panels {
+    min-height: 280px;
+  }
+  .home-story-panel h2 {
+    font-size: clamp(46px, 5vw, 64px);
+    margin-bottom: 20px;
+  }
+  .home-fashion-copy .hero-note {
+    margin-top: 18px;
+  }
+  .home-story-navigation {
+    margin-top: 12px;
+  }
+}
+@media (max-width: 700px) and (max-height: 780px) {
+  .hero.home-fashion-stage {
+    grid-template-rows: auto minmax(240px, 1fr);
+  }
+  .home-fashion-copy {
+    padding: 22px 20px 12px;
+  }
+  .home-fashion-copy > .eyebrow {
+    margin-bottom: 12px;
+  }
+  .home-story-panels {
+    min-height: 190px;
+  }
+  .home-story-panel h2 {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+  .home-fashion-copy .hero-note {
+    display: none;
+  }
+  .home-story-navigation {
+    margin-top: 8px;
+  }
+}
+@media (max-height: 580px) {
+  .home-fashion-story {
+    height: auto;
+    min-height: 0;
+  }
+  .hero.home-fashion-stage {
+    position: relative;
+    height: auto;
+    min-height: 0;
+  }
+  .hero-image.home-fashion-visual {
+    min-height: 350px;
+  }
+  .home-story-navigation,
+  .home-fashion-scroll {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-fashion-story {
+    height: auto;
+    min-height: 0;
+  }
+  .hero.home-fashion-stage {
+    position: relative;
+    height: auto;
+    min-height: 680px;
+  }
+  .home-fashion-visual {
+    min-height: 430px;
+  }
+  .home-story-panel,
+  .home-fashion-canvas,
+  .home-fashion-fallback {
+    animation: none !important;
+    transition: none !important;
+  }
+  .home-story-navigation,
+  .home-fashion-scroll,
+  .home-fashion-pause {
+    display: none;
+  }
+}

@@ -48,6 +48,8 @@ The same browser command also runs five dashboard scenarios against genuine, iso
 
 Afterward stop this test server and discard its temporary shell environment. Normal `npm run dev` never loads the hook. Never set the test mail credentials in a deployed environment.
 
+Five additional home-page browser scenarios verify the actual WebGL canvas has rendered pixels, scroll chapters and pinning, pause/resume, a persistent accessible heading, desktop/tablet/phone/short-viewport layouts, reduced motion, an unavailable-WebGL image fallback and absence of the effect on other routes. These presentation checks create no account, booking or financial data. Screenshots are saved under ignored `.local/qa/home-animation-*.png`.
+
 ## Production packaging and launch checks
 
 Run `npm run build`, followed by `npm start` with deployment environment values. For GoDaddy packaging, repeat in a fresh source copy with `npm ci --omit=dev`; tests and Playwright configuration are excluded from the application build's TypeScript project and checked separately by `npm run typecheck` in the full development installation.

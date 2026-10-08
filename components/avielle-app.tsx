@@ -11,7 +11,6 @@ import {
   HeartHandshake,
   Leaf,
   Menu,
-  MoveUpRight,
   Shirt,
   X,
 } from "lucide-react";
@@ -22,6 +21,7 @@ import { DashboardPage } from "./dashboard";
 import { ListingPage } from "./listing-form";
 import { BookingPage } from "./booking";
 import { ProfilePage, MemberPage } from "./profile";
+import { HomeFashionStory } from "./home-fashion-story";
 
 export function AvielleApp() {
   return (
@@ -227,58 +227,7 @@ function Footer() {
 function HomePage() {
   return (
     <>
-      <section className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">
-            <span className="tiny-line" /> THE SHARED WARDROBE
-          </p>
-          <h1>
-            Great style.
-            <br />A lighter
-            <br />
-            <em>footprint.</em>
-          </h1>
-          <p className="hero-description">
-            Fall in love with what you wear.
-            <br />
-            Rent beautiful pieces. Share the ones you love.
-            <br />
-            Make room for more possibilities.
-          </p>
-          <div className="button-row">
-            <Link href="/explore" className="button">
-              Explore the wardrobe <ArrowRight size={18} />
-            </Link>
-            <Link href="/list" className="text-link">
-              Start lending <ArrowUpRight size={16} />
-            </Link>
-          </div>
-          <div className="hero-note">
-            <Leaf size={17} strokeWidth={1.5} />
-            <span>A new way to wear what you love.</span>
-          </div>
-        </div>
-        <div className="hero-image">
-          <img
-            src="/images/hero.jpg"
-            alt="Editorial portrait of a woman wearing an ivory tailored suit"
-            fetchPriority="high"
-          />
-          <div className="hero-image-caption">
-            <span>
-              STYLE IS YOURS.
-              <br />
-              OWNERSHIP IS OPTIONAL.
-            </span>
-            <span className="caption-circle">
-              <MoveUpRight size={25} strokeWidth={1.2} />
-            </span>
-          </div>
-          <span className="image-credit">
-            Editorial inspiration · not a rental listing
-          </span>
-        </div>
-      </section>
+      <HomeFashionStory />
       <div className="brand-values">
         <span>
           <Shirt size={18} strokeWidth={1.4} /> Pieces with another story to
